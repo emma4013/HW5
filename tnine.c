@@ -1,93 +1,77 @@
-#include <stdio.h>
+// tnine.c
+// Emma Tran
+// 5-17-23
+// CSE 374 HW 5
+
+/* tnine is a program that drives a trie / t9 program. This code
+   builds a trie according to trienode.h and runs an interactive
+   session where the user can retrieve words using T9 sequences.
+*/
+
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 #include "trienode.h"
 
-void printWord(const char *word) {
-    if (word) {
-        printf("'%s'\n", word);
+// Runs decoding interaction with the user
+void run_session(trieNode* wordTrie);
+
+int main(int argc, char** argv) {
+    // File pointer to the dictionary file
+    FILE* dictionary = NULL; 
+    // Pointer to the trie data structure
+    trieNode* wordTrie = NULL; 
+
+    if (argc < 2) {
+        fprintf(stderr, "Usage: %s [DICTIONARY]\n", argv[0]);
+        return EXIT_FAILURE;
     } else {
-        printf("Not found in current dictionary.\n");
+        // Opens the dictionary file in read mode
+        dictionary = fopen(argv[1], "r"); 
+        if (!dictionary) {
+            fprintf(stderr, "Error: Cannot open %s\n", argv[1]);
+            return EXIT_FAILURE;
+        }
     }
+
+    // Builds the trie using the dictionary
+    wordTrie = build_tree(dictionary);
+    // Runs the interactive session to retrieve words using T9 sequences
+    run_session(wordTrie);
+    // Cleans up by freeing memory and closing the dictionary file
+    free_tree(wordTrie);
+    fclose(dictionary);
+
+    return EXIT_SUCCESS;
 }
 
-int main(int argc, char *argv[]) {
-    if (argc != 2) {
-        printf("Usage: %s FILE\n", argv[0]);
-        return 1;
-    }
+// Runs an interactive session where the user can retrieve words using T9 sequences
+void run_session(trieNode* wordTrie) {
+    // Acts as a buffer to store user input
+    char userInput[MAXLEN]; 
+    // Acts as a buffer to store the previous user input
+    char prev[MAXLEN]; 
 
-    FILE *dict = fopen(argv[1], "r");
-    if (!dict) {
-        printf("Error opening dictionary file.\n");
-        return 1;
-    }
-
-    trieNode *root = build_tree(dict);
-    fclose(dict);
-
-    printf("Enter 'exit' to quit.\n");
-
-    char input[MAXLEN];
-    char prevPattern[MAXLEN] = "";
-    int hasT9onym = 0;
+    printf("Enter \"exit\" to quit.\n");
     while (1) {
-        printf("Enter Key Sequence (or '#' for next word):\n> ");
-        if (fgets(input, sizeof(input), stdin) == NULL) {
-            break;  // End-of-file reached
+        printf("Enter Key Sequence (or \"#\" for next word):\n>");
+        // Reads user input
+        scanf("%s", userInput); 
+
+        // Exits the interactive session if user inputs "exit"
+        if (strncmp(userInput, "exit", 4) == 0) {
+            break; 
+        } else if (strncmp(userInput, "#", 1) == 0) {
+            int i = strlen(prev);
+            // Adds '#' to the end of the previous sequence
+            prev[i + 1] = '\0'; 
+            prev[i] = '#';
+        } else {
+            int j = strlen(userInput);
+            // Copies user input to the previous sequence buffer
+            strncpy(prev, userInput, j + 1); 
         }
-
-        input[strcspn(input, "\n")] = '\0';  // Remove newline character
-
-        if (strcmp(input, "exit") == 0) {
-            break;  // Exit the program
-        }
-
-        int len = strlen(input);
-        int index = 0;
-        int printNext = 0;
-        while (index < len) {
-            char pattern[MAXLEN];
-            int patternIndex = 0;
-            while (index < len && input[index] != '#') {
-                pattern[patternIndex++] = input[index++];
-            }
-            pattern[patternIndex] = '\0';
-
-            if (printNext && patternIndex == 0) {
-                // Print next word with the same numeric value
-                if (hasT9onym) {
-                    char *nextWord = get_word(root, prevPattern);
-                    printWord(nextWord);
-                } else {
-                    printf("There are no more T9onyms.\n");
-                }
-                printNext = 0;
-            } else {
-                // Print word corresponding to the pattern
-                char *word = get_word(root, pattern);
-                printWord(word);
-                strncpy(prevPattern, pattern, sizeof(prevPattern));
-                hasT9onym = (word != NULL);
-            }
-
-            if (index < len && input[index] == '#') {
-                index++;
-                printNext = 1;
-                if (patternIndex == 0) {
-                    // Print next word with the same numeric value
-                    if (hasT9onym) {
-                        char *nextWord = get_word(root, prevPattern);
-                        printWord(nextWord);
-                    } else {
-                        printf("There are no more T9onyms.\n");
-                    }
-                }
-            }
-        }
+        // Prints the word associated with the T9 sequence
+        printf("%s\n", get_word(wordTrie, prev)); 
     }
-
-    free_tree(root);
-
-    return 0;
 }

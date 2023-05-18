@@ -1,13 +1,24 @@
-all: t9 tnine
+# Emma Tran
+# 5-17-23
+# HW5 CSE374
 
-t9: t9.c trie.o
-	gcc -Wall -Wextra -std=c99 -o t9 t9.c trie.o
+# Builds the executable t9 when invoked with just the 'make' command
+all: t9
 
-tnine: tnine.c trie.o
-	gcc -Wall -Wextra -std=c99 -o tnine tnine.c trie.o
+# Target for builting the t9 executable
+t9: trie.o tnine.o
+	gcc -Wall -std=c11 -g -o t9 trie.o tnine.o
 
+# Target for building trie.o object file and
+# it depends on the trie.c and trienode.h files
 trie.o: trie.c trienode.h
-	gcc -Wall -Wextra -std=c99 -c trie.c -o trie.o
+	gcc -Wall -std=c11 -g -c trie.c trienode.h
 
+# Target for building the tnine.o object file
+# and it depends on tnine.c and trienode.h files
+tnine.o: tnine.c trienode.h
+	gcc -Wall -std=c11 -g -c tnine.c trienode.h
+
+# Cleans Target
 clean:
-	rm -f t9 tnine trie.o
+	rm -f *.o t9 *~
