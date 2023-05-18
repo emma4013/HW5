@@ -1,6 +1,6 @@
 # Emma Tran
 # 5-17-23
-# HW5 CSE374
+# CSE 374 HW 5
 
 # Builds the executable t9 when invoked with just the 'make' command
 all: t9
